@@ -23,7 +23,7 @@
     .small{color:var(--muted);font-size:13px}
     .muted{color:var(--muted)}
 
-    .preview{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+    .preview, .final-preview{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
     .thumb{width:84px;height:84px;border-radius:10px;object-fit:cover;border:1px solid rgba(255,255,255,0.04)}
 
     .footer{margin-top:16px;display:flex;justify-content:space-between;align-items:center}
@@ -56,8 +56,8 @@
   </style>
 </head>
 <body>
-  <main class="wrap">
-    <div class="card">
+  <main class="wrap" id="mainScreen">
+    <div class="card" id="uploadCard">
       <h1>Add photos</h1>
       <p class="sub">Choose a source to upload photos. This demo connects to your upload service endpoints — change the URLs in the script to match your backend.</p>
 
@@ -101,13 +101,20 @@
         <a class="link" href="#" id="clearAll">Clear</a>
       </div>
     </div>
+
+    <div class="card" id="finalPreviewCard" style="display:none">
+      <h1>Preview Selected Photos</h1>
+      <div class="final-preview" id="finalPreview"></div>
+      <div class="footer">
+        <button class="add-btn" id="backBtn">Back</button>
+      </div>
+    </div>
   </main>
 
   <script>
     const ENDPOINTS = {
       uploadFile: '/upload',
-      oauthStart: (provider) => `demo-oauth.html?provider=${provider}`,
-      oauthTokenUpload: '/upload-from-provider'
+      oauthStart: (provider) => `demo-oauth.html?provider=${provider}`
     };
 
     const deviceInput = document.getElementById('deviceInput');
@@ -118,10 +125,15 @@
     const progress = document.getElementById('progressBar');
     const clearAll = document.getElementById('clearAll');
 
+    const mainScreen = document.getElementById('mainScreen');
+    const uploadCard = document.getElementById('uploadCard');
+    const finalPreviewCard = document.getElementById('finalPreviewCard');
+    const finalPreview = document.getElementById('finalPreview');
+    const backBtn = document.getElementById('backBtn');
+
     deviceInput.addEventListener('change', async (e)=>{
       const files = Array.from(e.target.files || []);
-      if(!files.length) return;
-      await uploadFiles(files);
+      files.forEach(f=> addPreview(f));
     });
 
     deviceBtn.addEventListener('click', ()=> deviceInput.click());
@@ -133,25 +145,16 @@
       const left = (screen.width/2) - (w/2);
       const top = (screen.height/2) - (h/2);
       const url = ENDPOINTS.oauthStart(provider);
-      const popup = window.open(url, `${provider}-auth`, `width=${w},height=${h},left=${left},top=${top}`);
-      if(!popup) window.location.href = url;
+      window.open(url, `${provider}-auth`, `width=${w},height=${h},left=${left},top=${top}`);
     }
 
-    window.addEventListener('message', async (ev)=>{
+    window.addEventListener('message', (ev)=>{
       const msg = ev.data || {};
       if(msg.type === 'oauth' && msg.provider && msg.accessToken){
         showToast(`Connected ${msg.provider}. Select images...`);
         openFakeGrid(msg.provider);
       }
     });
-
-    function setProgress(p){ progress.style.width = Math.max(0, Math.min(100, p)) + '%'; }
-
-    async function uploadFiles(files){
-      for(let file of files){
-        addPreview(file);
-      }
-    }
 
     function addPreview(fileOrUrl){
       const img = document.createElement('img');
@@ -163,46 +166,4 @@
     function openFakeGrid(provider){
       const overlay = document.createElement('div');
       overlay.className = 'overlay';
-      overlay.innerHTML = `
-        <h3>Select images from ${provider}</h3>
-        <div class="grid">
-          <img src="https://picsum.photos/id/1011/200/200" />
-          <img src="https://picsum.photos/id/1025/200/200" />
-          <img src="https://picsum.photos/id/1035/200/200" />
-          <img src="https://picsum.photos/id/1043/200/200" />
-          <img src="https://picsum.photos/id/1050/200/200" />
-          <img src="https://picsum.photos/id/1062/200/200" />
-        </div>
-        <button class="add-btn">Add Selected Images</button>
-      `;
-      document.body.appendChild(overlay);
-
-      const selected = new Set();
-      overlay.querySelectorAll('.grid img').forEach(img=>{
-        img.addEventListener('click', ()=>{
-          img.classList.toggle('selected');
-          if(img.classList.contains('selected')) selected.add(img.src);
-          else selected.delete(img.src);
-        });
-      });
-
-      overlay.querySelector('.add-btn').addEventListener('click', ()=>{
-        selected.forEach(url => addPreview(url));
-        overlay.remove();
-        showToast(`Imported ${selected.size} from ${provider}`);
-      });
-    }
-
-    clearAll.addEventListener('click', (e)=>{ e.preventDefault(); preview.innerHTML=''; });
-
-    function showToast(msg){
-      const t = document.createElement('div');
-      t.textContent = msg; t.style.position='fixed'; t.style.left='50%'; t.style.transform='translateX(-50%)';
-      t.style.bottom='28px'; t.style.background='rgba(14,20,28,0.9)'; t.style.padding='10px 14px'; t.style.borderRadius='10px';
-      t.style.boxShadow='0 8px 30px rgba(3,6,12,0.6)'; t.style.color='#eaf6ff';
-      document.body.appendChild(t);
-      setTimeout(()=>{ t.style.transition='opacity 220ms'; t.style.opacity='0'; setTimeout(()=>t.remove(),240); }, 2500);
-    }
-  </script>
-</body>
-</html>
+      overlay.innerHTML = 
