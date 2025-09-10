@@ -131,7 +131,7 @@
     const finalPreview = document.getElementById('finalPreview');
     const backBtn = document.getElementById('backBtn');
 
-    deviceInput.addEventListener('change', async (e)=>{
+    deviceInput.addEventListener('change', (e)=>{
       const files = Array.from(e.target.files || []);
       files.forEach(f=> addPreview(f));
     });
@@ -166,4 +166,59 @@
     function openFakeGrid(provider){
       const overlay = document.createElement('div');
       overlay.className = 'overlay';
-      overlay.innerHTML = 
+      overlay.innerHTML = `
+        <h3>Select images from ${provider}</h3>
+        <div class="grid">
+          <img src="https://picsum.photos/id/1011/200/200" />
+          <img src="https://picsum.photos/id/1025/200/200" />
+          <img src="https://picsum.photos/id/1035/200/200" />
+          <img src="https://picsum.photos/id/1043/200/200" />
+          <img src="https://picsum.photos/id/1050/200/200" />
+          <img src="https://picsum.photos/id/1062/200/200" />
+        </div>
+        <button class="add-btn">Add Selected Images</button>
+      `;
+      document.body.appendChild(overlay);
+
+      const selected = new Set();
+      overlay.querySelectorAll('.grid img').forEach(img=>{
+        img.addEventListener('click', ()=>{
+          img.classList.toggle('selected');
+          if(img.classList.contains('selected')) selected.add(img.src);
+          else selected.delete(img.src);
+        });
+      });
+
+      overlay.querySelector('.add-btn').addEventListener('click', ()=>{
+        // Move selected images to final preview screen
+        finalPreview.innerHTML='';
+        selected.forEach(url=>{
+          const img = document.createElement('img');
+          img.className='thumb';
+          img.src = url;
+          finalPreview.appendChild(img);
+        });
+        overlay.remove();
+        uploadCard.style.display='none';
+        finalPreviewCard.style.display='block';
+      });
+    }
+
+    backBtn.addEventListener('click', ()=>{
+      finalPreviewCard.style.display='none';
+      uploadCard.style.display='block';
+    });
+
+    clearAll.addEventListener('click', (e)=>{ e.preventDefault(); preview.innerHTML=''; });
+
+    function showToast(msg){
+      const t = document.createElement('div');
+      t.textContent = msg; t.style.position='fixed'; t.style.left='50%'; t.style.transform='translateX(-50%)';
+      t.style.bottom='28px'; t.style.background='rgba(14,20,28,0.9)'; t.style.padding='10px 14px'; t.style.borderRadius='10px';
+      t.style.boxShadow='0 8px 30px rgba(3,6,12,0.6)'; t.style.color='#eaf6ff';
+      document.body.appendChild(t);
+      setTimeout(()=>{ t.style.transition='opacity 220ms'; t.style.opacity='0'; setTimeout(()=>t.remove(),240); }, 2500);
+    }
+  </script>
+</body>
+</html>
