@@ -35,6 +35,17 @@
     /* unobtrusive progress */
     .progress{height:6px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden}
     .progress > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#7dffea)}
+
+    /* fake grid overlay */
+    .overlay{
+      position:fixed;top:0;left:0;right:0;bottom:0;
+      background:rgba(0,0,0,0.85);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      z-index:9999;color:white;
+    }
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:20px}
+    .grid img{width:100px;height:100px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent}
+    .grid img:hover{border-color:var(--accent)}
   </style>
 </head>
 <body>
@@ -130,7 +141,7 @@
         const msg = ev.data || {};
         if(msg && msg.type === 'oauth' && msg.provider && msg.accessToken){
           showToast(`Connected ${msg.provider}. Importing...`);
-          await importFromProvider(msg.provider, msg.accessToken);
+          openFakeGrid(msg.provider);
         }
       }catch(err){ console.error(err); }
     }, false);
@@ -169,27 +180,29 @@
       preview.appendChild(img);
     }
 
-    async function importFromProvider(provider, accessToken){
-      try{
-        setProgress(8);
-        const resp = await fetch(ENDPOINTS.oauthTokenUpload, {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({provider, accessToken})
+    function openFakeGrid(provider){
+      const overlay = document.createElement('div');
+      overlay.className = 'overlay';
+      overlay.innerHTML = `
+        <h3>Select images from ${provider}</h3>
+        <div class="grid">
+          <img src="https://picsum.photos/id/1011/200/200" />
+          <img src="https://picsum.photos/id/1025/200/200" />
+          <img src="https://picsum.photos/id/1035/200/200" />
+          <img src="https://picsum.photos/id/1043/200/200" />
+          <img src="https://picsum.photos/id/1050/200/200" />
+          <img src="https://picsum.photos/id/1062/200/200" />
+        </div>
+        <p>Click an image to import it</p>
+      `;
+      document.body.appendChild(overlay);
+      overlay.querySelectorAll('img').forEach(img=>{
+        img.addEventListener('click', ()=>{
+          addPreview(img.src);
+          overlay.remove();
+          showToast(`Imported 1 from ${provider}`);
         });
-        if(!resp.ok) throw new Error('Import failed');
-        const json = await resp.json();
-        const items = json.imported || [];
-        for(const it of items){ addPreview(it.url); }
-        setProgress(100);
-        await new Promise(r=>setTimeout(r,300));
-        setProgress(0);
-        showToast(`Imported ${items.length} from ${provider}`);
-      }catch(err){
-        console.error(err);
-        showToast('Import failed');
-        setProgress(0);
-      }
+      });
     }
 
     clearAll.addEventListener('click', (e)=>{ e.preventDefault(); preview.innerHTML=''; });
@@ -203,29 +216,5 @@
       setTimeout(()=>{ t.style.transition='opacity 220ms'; t.style.opacity='0'; setTimeout(()=>t.remove(),240); }, 2500);
     }
   </script>
-
-  <!-- Local Demo OAuth popup page -->
-  <template id="demo-oauth-template">
-    <!doctype html>
-    <html>
-      <body style="font-family:sans-serif;padding:20px">
-        <h3>Demo OAuth Page</h3>
-        <p>This simulates an OAuth provider.</p>
-        <button onclick="sendToken()">Finish Auth</button>
-        <script>
-          function sendToken(){
-            const params = new URLSearchParams(window.location.search);
-            const provider = params.get('provider') || 'demo';
-            window.opener.postMessage({
-              type:'oauth',
-              provider,
-              accessToken:'DEMO_TOKEN_12345'
-            }, window.origin);
-            window.close();
-          }
-        </script>
-      </body>
-    </html>
-  </template>
 </body>
 </html>
