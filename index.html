@@ -1,413 +1,231 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Service</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>Mobile Upload UI</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#56b6f7; --muted:#9aa7b2; --glass: rgba(255,255,255,0.03);
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071026 0%, #081427 100%);color:#e6f0f6}
+    .wrap{max-width:480px;margin:28px auto;padding:20px}
+    .card{background:var(--card);border-radius:18px;padding:18px;box-shadow:0 6px 28px rgba(2,6,23,0.6)}
+    h1{font-size:18px;margin:0 0 8px}
+    p.sub{color:var(--muted);margin:0 0 16px;font-size:13px}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+    .options{display:grid;grid-template-columns:1fr;gap:12px}
+    .btn{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:var(--glass);cursor:pointer;border:1px solid rgba(255,255,255,0.03)}
+    .btn:hover{transform:translateY(-2px)}
+    .btn .icon{width:42px;height:42px;border-radius:9px;background:linear-gradient(135deg,rgba(255,255,255,0.02),transparent);display:flex;align-items:center;justify-content:center;font-weight:700}
+    .btn .label{flex:1}
+    .small{color:var(--muted);font-size:13px}
+    .muted{color:var(--muted)}
 
-        .container {
-            width: 100%;
-            max-width: 400px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
+    .preview{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+    .thumb{width:84px;height:84px;border-radius:10px;object-fit:cover;border:1px solid rgba(255,255,255,0.04)}
 
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 24px;
-            font-weight: 600;
-        }
+    .footer{margin-top:16px;display:flex;justify-content:space-between;align-items:center}
+    .link{color:var(--accent);font-size:13px}
 
-        .upload-options {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+    /* mobile full screen feel */
+    @media (max-width:420px){.wrap{margin:10px}}
 
-        .upload-option {
-            background: white;
-            border: 2px solid #e1e5e9;
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .upload-option:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        }
-
-        .upload-option.device {
-            border-color: #4CAF50;
-        }
-
-        .upload-option.device:hover {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
-            border-color: #4CAF50;
-        }
-
-        .upload-option.instagram {
-            border-color: #E4405F;
-        }
-
-        .upload-option.instagram:hover {
-            background: linear-gradient(135deg, #E4405F, #C13584);
-            color: white;
-            border-color: #E4405F;
-        }
-
-        .upload-option.facebook {
-            border-color: #1877F2;
-        }
-
-        .upload-option.facebook:hover {
-            background: linear-gradient(135deg, #1877F2, #166fe5);
-            color: white;
-            border-color: #1877F2;
-        }
-
-        .option-icon {
-            font-size: 40px;
-            margin-bottom: 15px;
-            display: block;
-        }
-
-        .option-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .option-description {
-            font-size: 14px;
-            color: #666;
-            line-height: 1.4;
-        }
-
-        .upload-option:hover .option-description {
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .loading.active {
-            display: block;
-        }
-
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .status-message {
-            text-align: center;
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            display: none;
-        }
-
-        .status-message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 20px;
-                margin: 10px;
-            }
-
-            h1 {
-                font-size: 20px;
-                margin-bottom: 20px;
-            }
-
-            .upload-option {
-                padding: 15px;
-            }
-
-            .option-icon {
-                font-size: 35px;
-            }
-
-            .option-title {
-                font-size: 16px;
-            }
-        }
-    </style>
+    /* unobtrusive progress */
+    .progress{height:6px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden}
+    .progress > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#7dffea)}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Upload Media</h1>
-        
-        <div class="upload-options">
-            <div class="upload-option device" onclick="uploadFromDevice()">
-                <div class="option-icon">📱</div>
-                <div class="option-title">Upload from Device</div>
-                <div class="option-description">Select photos or videos from your phone or computer</div>
-            </div>
+  <main class="wrap">
+    <div class="card">
+      <h1>Add photos</h1>
+      <p class="sub">Choose a source to upload photos. This demo connects to your upload service endpoints — change the URLs in the script to match your backend.</p>
 
-            <div class="upload-option instagram" onclick="connectInstagram()">
-                <div class="option-icon">📸</div>
-                <div class="option-title">Add from Instagram</div>
-                <div class="option-description">Import your Instagram photos and videos</div>
-            </div>
+      <div class="options">
+        <!-- Device upload -->
+        <label class="btn" id="deviceBtn" for="deviceInput" role="button">
+          <div class="icon">📁</div>
+          <div class="label">
+            <div>Upload from device</div>
+            <div class="small muted">Select files from your phone or tablet</div>
+          </div>
+        </label>
+        <input id="deviceInput" type="file" accept="image/*" multiple style="display:none">
 
-            <div class="upload-option facebook" onclick="connectFacebook()">
-                <div class="option-icon">👥</div>
-                <div class="option-title">Add from Facebook</div>
-                <div class="option-description">Import your Facebook photos and videos</div>
-            </div>
+        <!-- Instagram -->
+        <div class="btn" id="instagramBtn" role="button">
+          <div class="icon">📸</div>
+          <div class="label">
+            <div>Add from Instagram</div>
+            <div class="small muted">Connect to Instagram to import photos</div>
+          </div>
         </div>
 
-        <input type="file" id="fileInput" multiple accept="image/*,video/*">
-        
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Processing your request...</p>
+        <!-- Facebook -->
+        <div class="btn" id="facebookBtn" role="button">
+          <div class="icon">👥</div>
+          <div class="label">
+            <div>Add from Facebook</div>
+            <div class="small muted">Connect to Facebook to import photos</div>
+          </div>
         </div>
+      </div>
 
-        <div class="status-message" id="statusMessage"></div>
-        
-        <div style="margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; font-size: 12px; color: rgba(255, 255, 255, 0.8);">
-            <strong>Demo Mode:</strong> This is a fully functional demo showing realistic OAuth flows. File uploads simulate real API calls. Instagram/Facebook demos show authentic-looking authorization screens. All interactions are logged to the console.
+      <div style="margin-top:14px">
+        <div class="progress" aria-hidden>
+          <i id="progressBar"></i>
         </div>
+      </div>
+
+      <div class="preview" id="preview"></div>
+
+      <div class="footer">
+        <div class="small muted">Tip: You can pick multiple images.</div>
+        <a class="link" href="#" id="clearAll">Clear</a>
+      </div>
     </div>
 
-    <script>
-        // Configuration - Using demo OAuth services for testing
-        const UPLOAD_CONFIG = {
-            deviceUpload: '/api/upload/device',
-            // Using mock OAuth2 server for demo (replace with your endpoints)
-            instagramConnect: 'http://localhost:8080/instagram/authorize?response_type=code&client_id=test&redirect_uri=' + encodeURIComponent(window.location.origin + '/callback'),
-            facebookConnect: 'http://localhost:8080/facebook/authorize?response_type=code&client_id=test&redirect_uri=' + encodeURIComponent(window.location.origin + '/callback'),
-            // Alternative: Use OAuth.com playground
-            // instagramConnect: 'https://www.oauth.com/playground/authorization-code.html',
-            // facebookConnect: 'https://www.oauth.com/playground/authorization-code.html'
-        };
+    <p style="text-align:center;color:var(--muted);font-size:12px;margin-top:10px">Demo: replace <code>/upload</code> and <code>/auth/*</code> endpoints with your upload service.</p>
+  </main>
 
-        function showLoading() {
-            document.getElementById('loading').classList.add('active');
-            hideStatusMessage();
+  <script>
+    const ENDPOINTS = {
+      uploadFile: '/upload',
+      oauthStart: (provider) => `demo-oauth.html?provider=${provider}`,
+      oauthTokenUpload: '/upload-from-provider'
+    };
+
+    const deviceInput = document.getElementById('deviceInput');
+    const deviceBtn = document.getElementById('deviceBtn');
+    const instagramBtn = document.getElementById('instagramBtn');
+    const facebookBtn = document.getElementById('facebookBtn');
+    const preview = document.getElementById('preview');
+    const progress = document.getElementById('progressBar');
+    const clearAll = document.getElementById('clearAll');
+
+    deviceInput.addEventListener('change', async (e)=>{
+      const files = Array.from(e.target.files || []);
+      if(!files.length) return;
+      await uploadFiles(files);
+    });
+
+    deviceBtn.addEventListener('click', ()=> deviceInput.click());
+
+    instagramBtn.addEventListener('click', ()=> startOAuth('instagram'));
+    facebookBtn.addEventListener('click', ()=> startOAuth('facebook'));
+
+    function startOAuth(provider){
+      const w = 400, h = 300;
+      const left = (screen.width/2) - (w/2);
+      const top = (screen.height/2) - (h/2);
+      const url = ENDPOINTS.oauthStart(provider);
+      const popup = window.open(url, `${provider}-auth`, `width=${w},height=${h},left=${left},top=${top}`);
+      if(!popup) window.location.href = url;
+    }
+
+    window.addEventListener('message', async (ev)=>{
+      try{
+        const msg = ev.data || {};
+        if(msg && msg.type === 'oauth' && msg.provider && msg.accessToken){
+          showToast(`Connected ${msg.provider}. Importing...`);
+          await importFromProvider(msg.provider, msg.accessToken);
         }
+      }catch(err){ console.error(err); }
+    }, false);
 
-        function hideLoading() {
-            document.getElementById('loading').classList.remove('active');
+    function setProgress(p){ progress.style.width = Math.max(0, Math.min(100, p)) + '%'; }
+
+    async function uploadFiles(files){
+      for(let file of files){
+        addPreview(file);
+        try{
+          setProgress(10);
+          const form = new FormData();
+          form.append('file', file);
+          const resp = await fetch(ENDPOINTS.uploadFile, {method:'POST', body: form});
+          if(!resp.ok) throw new Error('Upload failed');
+          setProgress(100);
+          await new Promise(r=>setTimeout(r,300));
+          setProgress(0);
+        }catch(err){
+          console.error('upload error', err);
+          showToast('Upload failed for ' + file.name);
+          setProgress(0);
         }
+      }
+    }
 
-        function showStatusMessage(message, type = 'success') {
-            const statusEl = document.getElementById('statusMessage');
-            statusEl.textContent = message;
-            statusEl.className = `status-message ${type}`;
-            statusEl.style.display = 'block';
-            
-            setTimeout(() => {
-                hideStatusMessage();
-            }, 5000);
-        }
+    function addPreview(fileOrUrl){
+      const img = document.createElement('img');
+      img.className = 'thumb';
+      if(typeof fileOrUrl === 'string'){
+        img.src = fileOrUrl;
+      } else {
+        img.src = URL.createObjectURL(fileOrUrl);
+        img.onload = ()=> URL.revokeObjectURL(img.src);
+      }
+      preview.appendChild(img);
+    }
 
-        function hideStatusMessage() {
-            document.getElementById('statusMessage').style.display = 'none';
-        }
-
-        async function uploadToService(endpoint, data) {
-            try {
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    body: data
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Upload failed: ${response.statusText}`);
-                }
-
-                const result = await response.json();
-                return result;
-            } catch (error) {
-                console.error('Upload error:', error);
-                throw error;
-            }
-        }
-
-        function uploadFromDevice() {
-            document.getElementById('fileInput').click();
-        }
-
-        document.getElementById('fileInput').addEventListener('change', async function(event) {
-            const files = event.target.files;
-            if (files.length === 0) return;
-
-            showLoading();
-
-            try {
-                const formData = new FormData();
-                Array.from(files).forEach((file, index) => {
-                    formData.append(`file_${index}`, file);
-                });
-                formData.append('demo', 'true');
-                formData.append('upload_type', 'device');
-
-                const result = await uploadToService(UPLOAD_CONFIG.deviceUpload, formData);
-                
-                // HTTPBin returns the files in the response, so we can show details
-                const fileCount = Object.keys(result.files || {}).length;
-                showStatusMessage(`Demo upload successful! ${fileCount || files.length} file(s) sent to HTTPBin test server. Check console for details.`, 'success');
-                
-                console.log('HTTPBin response:', result);
-            } catch (error) {
-                showStatusMessage('Demo upload failed. Please try again.', 'error');
-            } finally {
-                hideLoading();
-                // Reset the file input
-                event.target.value = '';
-            }
+    async function importFromProvider(provider, accessToken){
+      try{
+        setProgress(8);
+        const resp = await fetch(ENDPOINTS.oauthTokenUpload, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({provider, accessToken})
         });
+        if(!resp.ok) throw new Error('Import failed');
+        const json = await resp.json();
+        const items = json.imported || [];
+        for(const it of items){ addPreview(it.url); }
+        setProgress(100);
+        await new Promise(r=>setTimeout(r,300));
+        setProgress(0);
+        showToast(`Imported ${items.length} from ${provider}`);
+      }catch(err){
+        console.error(err);
+        showToast('Import failed');
+        setProgress(0);
+      }
+    }
 
-        async function connectInstagram() {
-            showLoading();
+    clearAll.addEventListener('click', (e)=>{ e.preventDefault(); preview.innerHTML=''; });
 
-            try {
-                // For Instagram, you'll typically need to redirect to Instagram OAuth
-                // This example shows a basic connection attempt
-                const response = await fetch(UPLOAD_CONFIG.instagramConnect, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        action: 'connect'
-                    })
-                });
+    function showToast(msg){
+      const t = document.createElement('div');
+      t.textContent = msg; t.style.position='fixed'; t.style.left='50%'; t.style.transform='translateX(-50%)';
+      t.style.bottom='28px'; t.style.background='rgba(14,20,28,0.9)'; t.style.padding='10px 14px'; t.style.borderRadius='10px';
+      t.style.boxShadow='0 8px 30px rgba(3,6,12,0.6)'; t.style.color='#eaf6ff';
+      document.body.appendChild(t);
+      setTimeout(()=>{ t.style.transition='opacity 220ms'; t.style.opacity='0'; setTimeout(()=>t.remove(),240); }, 2500);
+    }
+  </script>
 
-                if (!response.ok) {
-                    throw new Error('Instagram connection failed');
-                }
-
-                const result = await response.json();
-                
-                // If the service returns an OAuth URL, redirect to it
-                if (result.authUrl) {
-                    window.location.href = result.authUrl;
-                } else {
-                    showStatusMessage('Instagram connected successfully!', 'success');
-                }
-            } catch (error) {
-                showStatusMessage('Failed to connect to Instagram. Please try again.', 'error');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function connectFacebook() {
-            showLoading();
-
-            try {
-                // For Facebook, you'll typically need to redirect to Facebook OAuth
-                const response = await fetch(UPLOAD_CONFIG.facebookConnect, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        action: 'connect'
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Facebook connection failed');
-                }
-
-                const result = await response.json();
-                
-                // If the service returns an OAuth URL, redirect to it
-                if (result.authUrl) {
-                    window.location.href = result.authUrl;
-                } else {
-                    showStatusMessage('Facebook connected successfully!', 'success');
-                }
-            } catch (error) {
-                showStatusMessage('Failed to connect to Facebook. Please try again.', 'error');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // Handle drag and drop for device uploads
-        const container = document.querySelector('.container');
-        
-        container.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            container.style.borderColor = '#4CAF50';
-        });
-
-        container.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            container.style.borderColor = 'transparent';
-        });
-
-        container.addEventListener('drop', (e) => {
-            e.preventDefault();
-            container.style.borderColor = 'transparent';
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                const fileInput = document.getElementById('fileInput');
-                fileInput.files = files;
-                fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        });
-    </script>
+  <!-- Local Demo OAuth popup page -->
+  <template id="demo-oauth-template">
+    <!doctype html>
+    <html>
+      <body style="font-family:sans-serif;padding:20px">
+        <h3>Demo OAuth Page</h3>
+        <p>This simulates an OAuth provider.</p>
+        <button onclick="sendToken()">Finish Auth</button>
+        <script>
+          function sendToken(){
+            const params = new URLSearchParams(window.location.search);
+            const provider = params.get('provider') || 'demo';
+            window.opener.postMessage({
+              type:'oauth',
+              provider,
+              accessToken:'DEMO_TOKEN_12345'
+            }, window.origin);
+            window.close();
+          }
+        </script>
+      </body>
+    </html>
+  </template>
 </body>
 </html>
