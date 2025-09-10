@@ -29,14 +29,11 @@
     .footer{margin-top:16px;display:flex;justify-content:space-between;align-items:center}
     .link{color:var(--accent);font-size:13px}
 
-    /* mobile full screen feel */
     @media (max-width:420px){.wrap{margin:10px}}
 
-    /* unobtrusive progress */
     .progress{height:6px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden}
     .progress > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#7dffea)}
 
-    /* fake grid overlay */
     .overlay{
       position:fixed;top:0;left:0;right:0;bottom:0;
       background:rgba(0,0,0,0.85);
@@ -45,7 +42,17 @@
     }
     .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:20px}
     .grid img{width:100px;height:100px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent}
-    .grid img:hover{border-color:var(--accent)}
+    .grid img.selected{border-color:var(--accent)}
+    .add-btn{
+      margin-top:12px;
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      padding:10px 16px;
+      border-radius:8px;
+      cursor:pointer;
+      font-size:14px;
+    }
   </style>
 </head>
 <body>
@@ -55,7 +62,6 @@
       <p class="sub">Choose a source to upload photos. This demo connects to your upload service endpoints — change the URLs in the script to match your backend.</p>
 
       <div class="options">
-        <!-- Device upload -->
         <label class="btn" id="deviceBtn" for="deviceInput" role="button">
           <div class="icon">📁</div>
           <div class="label">
@@ -65,7 +71,6 @@
         </label>
         <input id="deviceInput" type="file" accept="image/*" multiple style="display:none">
 
-        <!-- Instagram -->
         <div class="btn" id="instagramBtn" role="button">
           <div class="icon">📸</div>
           <div class="label">
@@ -74,7 +79,6 @@
           </div>
         </div>
 
-        <!-- Facebook -->
         <div class="btn" id="facebookBtn" role="button">
           <div class="icon">👥</div>
           <div class="label">
@@ -97,8 +101,6 @@
         <a class="link" href="#" id="clearAll">Clear</a>
       </div>
     </div>
-
-    <p style="text-align:center;color:var(--muted);font-size:12px;margin-top:10px">Demo: replace <code>/upload</code> and <code>/auth/*</code> endpoints with your upload service.</p>
   </main>
 
   <script>
@@ -123,7 +125,6 @@
     });
 
     deviceBtn.addEventListener('click', ()=> deviceInput.click());
-
     instagramBtn.addEventListener('click', ()=> startOAuth('instagram'));
     facebookBtn.addEventListener('click', ()=> startOAuth('facebook'));
 
@@ -137,46 +138,25 @@
     }
 
     window.addEventListener('message', async (ev)=>{
-      try{
-        const msg = ev.data || {};
-        if(msg && msg.type === 'oauth' && msg.provider && msg.accessToken){
-          showToast(`Connected ${msg.provider}. Importing...`);
-          openFakeGrid(msg.provider);
-        }
-      }catch(err){ console.error(err); }
-    }, false);
+      const msg = ev.data || {};
+      if(msg.type === 'oauth' && msg.provider && msg.accessToken){
+        showToast(`Connected ${msg.provider}. Select images...`);
+        openFakeGrid(msg.provider);
+      }
+    });
 
     function setProgress(p){ progress.style.width = Math.max(0, Math.min(100, p)) + '%'; }
 
     async function uploadFiles(files){
       for(let file of files){
         addPreview(file);
-        try{
-          setProgress(10);
-          const form = new FormData();
-          form.append('file', file);
-          const resp = await fetch(ENDPOINTS.uploadFile, {method:'POST', body: form});
-          if(!resp.ok) throw new Error('Upload failed');
-          setProgress(100);
-          await new Promise(r=>setTimeout(r,300));
-          setProgress(0);
-        }catch(err){
-          console.error('upload error', err);
-          showToast('Upload failed for ' + file.name);
-          setProgress(0);
-        }
       }
     }
 
     function addPreview(fileOrUrl){
       const img = document.createElement('img');
       img.className = 'thumb';
-      if(typeof fileOrUrl === 'string'){
-        img.src = fileOrUrl;
-      } else {
-        img.src = URL.createObjectURL(fileOrUrl);
-        img.onload = ()=> URL.revokeObjectURL(img.src);
-      }
+      img.src = typeof fileOrUrl === 'string' ? fileOrUrl : URL.createObjectURL(fileOrUrl);
       preview.appendChild(img);
     }
 
@@ -193,15 +173,23 @@
           <img src="https://picsum.photos/id/1050/200/200" />
           <img src="https://picsum.photos/id/1062/200/200" />
         </div>
-        <p>Click an image to import it</p>
+        <button class="add-btn">Add Selected Images</button>
       `;
       document.body.appendChild(overlay);
-      overlay.querySelectorAll('img').forEach(img=>{
+
+      const selected = new Set();
+      overlay.querySelectorAll('.grid img').forEach(img=>{
         img.addEventListener('click', ()=>{
-          addPreview(img.src);
-          overlay.remove();
-          showToast(`Imported 1 from ${provider}`);
+          img.classList.toggle('selected');
+          if(img.classList.contains('selected')) selected.add(img.src);
+          else selected.delete(img.src);
         });
+      });
+
+      overlay.querySelector('.add-btn').addEventListener('click', ()=>{
+        selected.forEach(url => addPreview(url));
+        overlay.remove();
+        showToast(`Imported ${selected.size} from ${provider}`);
       });
     }
 
