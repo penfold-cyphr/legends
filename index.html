@@ -196,19 +196,19 @@
             <div class="upload-option device" onclick="uploadFromDevice()">
                 <div class="option-icon">📱</div>
                 <div class="option-title">Upload from Device</div>
-                <div class="option-description">Select photos from your phone or computer</div>
+                <div class="option-description">Select photos or videos from your phone or computer</div>
             </div>
 
             <div class="upload-option instagram" onclick="connectInstagram()">
                 <div class="option-icon">📸</div>
                 <div class="option-title">Add from Instagram</div>
-                <div class="option-description">Import your Instagram photos</div>
+                <div class="option-description">Import your Instagram photos and videos</div>
             </div>
 
             <div class="upload-option facebook" onclick="connectFacebook()">
                 <div class="option-icon">👥</div>
                 <div class="option-title">Add from Facebook</div>
-                <div class="option-description">Import your Facebook photos</div>
+                <div class="option-description">Import your Facebook photos and videos</div>
             </div>
         </div>
 
@@ -220,6 +220,10 @@
         </div>
 
         <div class="status-message" id="statusMessage"></div>
+        
+        <div style="margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; font-size: 12px; color: rgba(255, 255, 255, 0.8);">
+            <strong>Demo Mode:</strong> This is a fully functional demo. File uploads will be simulated if CORS blocks real requests (normal for hosted sites). OAuth demos open Google's OAuth Playground to show the authentication flow. Check the browser console for detailed logs.
+        </div>
     </div>
 
     <script>
