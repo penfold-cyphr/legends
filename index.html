@@ -62,13 +62,13 @@
       <p class="sub">Choose a source to upload photos. This demo connects to your upload service endpoints — change the URLs in the script to match your backend.</p>
 
       <div class="options">
-        <label class="btn" id="deviceBtn" for="deviceInput" role="button">
+        <div class="btn" id="deviceBtn">
           <div class="icon">📁</div>
           <div class="label">
             <div>Upload from device</div>
             <div class="small muted">Select files from your phone or tablet</div>
           </div>
-        </label>
+        </div>
         <input id="deviceInput" type="file" accept="image/*" multiple style="display:none">
 
         <div class="btn" id="instagramBtn" role="button">
@@ -121,12 +121,13 @@
     const deviceBtn = document.getElementById('deviceBtn');
     const instagramBtn = document.getElementById('instagramBtn');
     const facebookBtn = document.getElementById('facebookBtn');
-    const preview = document.getElementById('preview');
 
     const uploadCard = document.getElementById('uploadCard');
     const finalPreviewCard = document.getElementById('finalPreviewCard');
     const finalPreview = document.getElementById('finalPreview');
     const backBtn = document.getElementById('backBtn');
+
+    deviceBtn.addEventListener('click', ()=> deviceInput.click());
 
     deviceInput.addEventListener('change', (e)=>{
       const files = Array.from(e.target.files || []);
@@ -134,7 +135,6 @@
       showPreviewScreen(files.map(f=> URL.createObjectURL(f)));
     });
 
-    deviceBtn.addEventListener('click', ()=> deviceInput.click());
     instagramBtn.addEventListener('click', ()=> startOAuth('instagram'));
     facebookBtn.addEventListener('click', ()=> startOAuth('facebook'));
 
